@@ -42,6 +42,31 @@ export default function TasksDashboard() {
     fetchTasks();
   }, []);
 
+  const getMonthlyStats = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    const stats: { [key: string]: { count: number; revenue: number; month: string } } = {};
+    
+    tasks.forEach(task => {
+      const taskDate = new Date(task.createdAt);
+      const monthKey = `${taskDate.getFullYear()}-${taskDate.getMonth()}`;
+      const monthName = taskDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
+      
+      if (!stats[monthKey]) {
+        stats[monthKey] = { count: 0, revenue: 0, month: monthName };
+      }
+      
+      stats[monthKey].count++;
+      if (isAdmin) {
+        stats[monthKey].revenue += task.netProfit;
+      }
+    });
+    
+    return Object.values(stats).sort((a, b) => b.month.localeCompare(a.month)).slice(0, 6);
+  };
+
   const fetchTasks = async () => {
     try {
       const res = await fetch("/api/tasks");
@@ -194,12 +219,20 @@ export default function TasksDashboard() {
             </div>
             <div className="flex gap-3">
               {isAdmin && (
-                <button
-                  onClick={() => setShowForm(!showForm)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition"
-                >
-                  {showForm ? "إلغاء" : "+ مهمة جديدة"}
-                </button>
+                <>
+                  <a
+                    href="/admin/panel"
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition"
+                  >
+                    👥 إدارة المستخدمين
+                  </a>
+                  <button
+                    onClick={() => setShowForm(!showForm)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition"
+                  >
+                    {showForm ? "إلغاء" : "+ مهمة جديدة"}
+                  </button>
+                </>
               )}
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}
@@ -210,6 +243,38 @@ export default function TasksDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Monthly Statistics */}
+        {isAdmin && tasks.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              📊 الإحصائيات الشهرية
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {getMonthlyStats().map((stat, index) => (
+                <div key={index} className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
+                    {stat.month}
+                  </h3>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {stat.count}
+                      </p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">مهمة</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                        ${stat.revenue.toFixed(2)}
+                      </p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">صافي الربح</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Add/Edit Form */}
         {showForm && isAdmin && (
@@ -407,6 +472,12 @@ export default function TasksDashboard() {
 
                   <div className="grid grid-cols-2 gap-4 mb-3">
                     <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">تاريخ الإنشاء</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">
+                        {new Date(task.createdAt).toLocaleDateString("ar-EG")}
+                      </p>
+                    </div>
+                    <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">الموعد النهائي</p>
                       <p className="font-semibold text-gray-900 dark:text-white">
                         {new Date(task.deadline).toLocaleDateString("ar-EG")}
@@ -418,19 +489,19 @@ export default function TasksDashboard() {
                         <div>
                           <p className="text-sm text-gray-600 dark:text-gray-400">السعر الإجمالي</p>
                           <p className="font-semibold text-gray-900 dark:text-white">
-                            ${task.totalPrice}
+                            {task.currency} {task.totalPrice}
                           </p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-600 dark:text-gray-400">نصيب المتعاون</p>
                           <p className="font-semibold text-gray-900 dark:text-white">
-                            ${task.collaboratorCut}
+                            {task.currency} {task.collaboratorCut}
                           </p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-600 dark:text-gray-400">صافي الربح</p>
                           <p className="font-semibold text-green-600 dark:text-green-400">
-                            ${task.netProfit}
+                            {task.currency} {task.netProfit}
                           </p>
                         </div>
                       </>
@@ -438,7 +509,15 @@ export default function TasksDashboard() {
                   </div>
 
                   <div className="flex gap-2 mt-4">
-                    {!isAdmin && (
+                    {!isAdmin && task.status !== "DONE" && (
+                      <button
+                        onClick={() => handleStatusChange(task.id, "DONE")}
+                        className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition font-semibold"
+                      >
+                        ✓ Mark Done
+                      </button>
+                    )}
+                    {!isAdmin && task.status !== "DONE" && (
                       <select
                         value={task.status}
                         onChange={(e) => handleStatusChange(task.id, e.target.value)}
@@ -446,7 +525,6 @@ export default function TasksDashboard() {
                       >
                         <option value="TODO">قيد الانتظار</option>
                         <option value="IN_PROGRESS">جاري العمل</option>
-                        <option value="DONE">مكتملة</option>
                       </select>
                     )}
                     
