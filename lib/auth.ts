@@ -8,28 +8,28 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        if (!credentials?.username || !credentials?.password) {
           console.log('Missing credentials');
           return null;
         }
 
-        console.log('Attempting login for:', credentials.email);
+        console.log('Attempting login for:', credentials.username);
 
         try {
           const user = await prisma.user.findUnique({
-            where: { email: credentials.email }
+            where: { username: credentials.username }
           });
 
           if (!user) {
-            console.log('User not found:', credentials.email);
+            console.log('User not found:', credentials.username);
             return null;
           }
 
-          console.log('User found:', user.email);
+          console.log('User found:', user.username);
 
           const isPasswordValid = await bcrypt.compare(
             credentials.password,
@@ -44,9 +44,8 @@ export const authOptions: NextAuthOptions = {
 
           return {
             id: user.id,
-            email: user.email,
-            name: user.name,
-            role: (user as any).role,
+            name: user.username,
+            role: user.role,
           };
         } catch (error) {
           console.error('Auth error:', error);
@@ -65,7 +64,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role;
+        token.role = user.role;
       }
       return token;
     },
