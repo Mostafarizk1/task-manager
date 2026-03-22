@@ -17,11 +17,10 @@ export async function PUT(
 
     const body = await request.json();
     const {
-      taskName,
+      title,
       clientName,
       deadline,
       totalPrice,
-      currency,
       collaboratorName,
       collaboratorCut,
       netProfit,
@@ -34,11 +33,10 @@ export async function PUT(
         userId: session.user.id,
       },
       data: {
-        taskName,
+        title,
         clientName,
         deadline: new Date(deadline),
         totalPrice,
-        currency: currency || "USD",
         collaboratorName,
         collaboratorCut,
         netProfit,

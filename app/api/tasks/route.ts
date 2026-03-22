@@ -39,11 +39,10 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
-      taskName,
+      title,
       clientName,
       deadline,
       totalPrice,
-      currency,
       collaboratorName,
       collaboratorCut,
       netProfit,
@@ -52,11 +51,10 @@ export async function POST(request: NextRequest) {
 
     const task = await prisma.task.create({
       data: {
-        taskName,
+        title,
         clientName,
         deadline: new Date(deadline),
         totalPrice,
-        currency: currency || "USD",
         collaboratorName,
         collaboratorCut,
         netProfit,
