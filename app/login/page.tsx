@@ -16,6 +16,8 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
+    console.log('Login attempt:', email);
+
     try {
       const result = await signIn("credentials", {
         email,
@@ -23,13 +25,21 @@ export default function LoginPage() {
         redirect: false,
       });
 
+      console.log('SignIn result:', result);
+
       if (result?.error) {
+        console.log('Login error:', result.error);
         setError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
-      } else {
+      } else if (result?.ok) {
+        console.log('Login successful, redirecting...');
         router.push("/dashboard");
         router.refresh();
+      } else {
+        console.log('Unexpected result:', result);
+        setError("حدث خطأ غير متوقع");
       }
     } catch (error) {
+      console.error('Login exception:', error);
       setError("حدث خطأ أثناء تسجيل الدخول");
     } finally {
       setLoading(false);
