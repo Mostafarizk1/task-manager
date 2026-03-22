@@ -28,6 +28,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Keep prod.db for Vercel deployment
+!prisma/prod.db
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
