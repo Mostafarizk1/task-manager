@@ -34,7 +34,12 @@ export default async function AdminPanelPage() {
       totalTasks: user.tasks.length,
       completedTasks,
       totalRevenue,
-      tasks: user.tasks,
+      tasks: user.tasks.map((task) => ({
+        ...task,
+        deadline: task.deadline.toISOString(),
+        createdAt: task.createdAt.toISOString(),
+        updatedAt: task.updatedAt.toISOString(),
+      })),
     };
   });
 
