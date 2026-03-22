@@ -10,6 +10,7 @@ interface Task {
   clientName: string;
   deadline: string;
   totalPrice: number;
+  currency: string;
   collaboratorName: string | null;
   collaboratorCut: number;
   netProfit: number;
@@ -28,6 +29,7 @@ export default function TasksDashboard() {
     clientName: "",
     deadline: "",
     totalPrice: 0,
+    currency: "USD",
     collaboratorName: "",
     collaboratorCut: 0,
     netProfit: 0,
@@ -47,9 +49,9 @@ export default function TasksDashboard() {
       setTasks(data.sort((a: Task, b: Task) => 
         new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
       ));
+      setLoading(false);
     } catch (error) {
       console.error("Error fetching tasks:", error);
-    } finally {
       setLoading(false);
     }
   };
@@ -62,6 +64,7 @@ export default function TasksDashboard() {
       totalPrice: Number(formData.totalPrice),
       collaboratorCut: Number(formData.collaboratorCut),
       netProfit: Number(formData.netProfit),
+      currency: formData.currency,
     };
 
     try {
@@ -79,7 +82,7 @@ export default function TasksDashboard() {
         });
       }
       
-      fetchTasks();
+      await fetchTasks();
       resetForm();
     } catch (error) {
       console.error("Error saving task:", error);
@@ -91,7 +94,7 @@ export default function TasksDashboard() {
     
     try {
       await fetch(`/api/tasks/${id}`, { method: "DELETE" });
-      fetchTasks();
+      await fetchTasks();
     } catch (error) {
       console.error("Error deleting task:", error);
     }
@@ -104,6 +107,7 @@ export default function TasksDashboard() {
       clientName: task.clientName,
       deadline: task.deadline.split("T")[0],
       totalPrice: task.totalPrice,
+      currency: task.currency || "USD",
       collaboratorName: task.collaboratorName || "",
       collaboratorCut: task.collaboratorCut,
       netProfit: task.netProfit,
@@ -122,7 +126,7 @@ export default function TasksDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...task, status: newStatus }),
       });
-      fetchTasks();
+      await fetchTasks();
     } catch (error) {
       console.error("Error updating status:", error);
     }
@@ -134,6 +138,7 @@ export default function TasksDashboard() {
       clientName: "",
       deadline: "",
       totalPrice: 0,
+      currency: "USD",
       collaboratorName: "",
       collaboratorCut: 0,
       netProfit: 0,
@@ -270,6 +275,21 @@ export default function TasksDashboard() {
                   }}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  العملة
+                </label>
+                <select
+                  value={formData.currency}
+                  onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="USD">دولار أمريكي (USD)</option>
+                  <option value="SAR">ريال سعودي (SAR)</option>
+                  <option value="EGP">جنيه مصري (EGP)</option>
+                </select>
               </div>
 
               <div>
