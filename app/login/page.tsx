@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -16,30 +16,20 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
-    console.log('Login attempt:', email);
-
     try {
       const result = await signIn("credentials", {
-        email,
+        username,
         password,
         redirect: false,
       });
 
-      console.log('SignIn result:', result);
-
       if (result?.error) {
-        console.log('Login error:', result.error);
-        setError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+        setError("اسم المستخدم أو كلمة المرور غير صحيحة");
       } else if (result?.ok) {
-        console.log('Login successful, redirecting...');
         router.push("/dashboard");
         router.refresh();
-      } else {
-        console.log('Unexpected result:', result);
-        setError("حدث خطأ غير متوقع");
       }
     } catch (error) {
-      console.error('Login exception:', error);
       setError("حدث خطأ أثناء تسجيل الدخول");
     } finally {
       setLoading(false);
@@ -61,19 +51,19 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label
-              htmlFor="email"
+              htmlFor="username"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
             >
-              البريد الإلكتروني
+              اسم المستخدم
             </label>
             <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
               className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition"
-              placeholder="example@email.com"
+              placeholder="admin"
             />
           </div>
 
