@@ -108,52 +108,86 @@ ALTER TABLE "Task" ALTER COLUMN status SET DEFAULT 'ACTIVE'::"TaskStatus";
 -- الخطوة 4: تحديث جدول Expense
 -- ============================================
 
--- إضافة أعمدة جديدة
-ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS type_temp TEXT;
-ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS description_temp TEXT;
-ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS currency_temp "Currency";
+-- التحقق من وجود الجدول وإنشائه إذا لم يكن موجوداً
+CREATE TABLE IF NOT EXISTS "Expense" (
+    id TEXT PRIMARY KEY,
+    type TEXT NOT NULL,
+    amount DOUBLE PRECISION NOT NULL,
+    currency "Currency" DEFAULT 'USD' NOT NULL,
+    description TEXT,
+    date TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "userId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT "Expense_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
 
--- نسخ البيانات
-UPDATE "Expense" SET type_temp = COALESCE(name, category, type) WHERE type_temp IS NULL;
-UPDATE "Expense" SET description_temp = description WHERE description_temp IS NULL;
+-- إذا كان الجدول موجود بالفعل، نحدثه
+DO $$ 
+BEGIN
+    -- إضافة أعمدة جديدة إذا لم تكن موجودة
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'Expense' AND column_name = 'type') THEN
+        ALTER TABLE "Expense" ADD COLUMN type_temp TEXT;
+        
+        -- نسخ البيانات من name أو category إذا كانت موجودة
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'Expense' AND column_name = 'name') THEN
+            UPDATE "Expense" SET type_temp = name WHERE type_temp IS NULL;
+            ALTER TABLE "Expense" DROP COLUMN name CASCADE;
+        ELSIF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'Expense' AND column_name = 'category') THEN
+            UPDATE "Expense" SET type_temp = category WHERE type_temp IS NULL;
+            ALTER TABLE "Expense" DROP COLUMN category CASCADE;
+        END IF;
+        
+        ALTER TABLE "Expense" RENAME COLUMN type_temp TO type;
+        ALTER TABLE "Expense" ALTER COLUMN type SET NOT NULL;
+    END IF;
 
--- تحويل العملة
-UPDATE "Expense" 
-SET currency_temp = CASE 
-    WHEN currency = 'SAR' THEN 'SAR'::"Currency"
-    WHEN currency = 'EGP' THEN 'EGP'::"Currency"
-    ELSE 'USD'::"Currency"
-END
-WHERE currency_temp IS NULL;
+    -- تحديث عمود description
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'Expense' AND column_name = 'description') THEN
+        ALTER TABLE "Expense" ADD COLUMN description TEXT;
+    END IF;
 
--- حذف الأعمدة القديمة
-ALTER TABLE "Expense" DROP COLUMN IF EXISTS name CASCADE;
-ALTER TABLE "Expense" DROP COLUMN IF EXISTS category CASCADE;
-ALTER TABLE "Expense" DROP COLUMN IF EXISTS currency CASCADE;
-
--- إعادة التسمية
-ALTER TABLE "Expense" RENAME COLUMN type_temp TO type;
-ALTER TABLE "Expense" RENAME COLUMN description_temp TO description;
-ALTER TABLE "Expense" RENAME COLUMN currency_temp TO currency;
-
--- إضافة constraints
-ALTER TABLE "Expense" ALTER COLUMN type SET NOT NULL;
-ALTER TABLE "Expense" ALTER COLUMN currency SET NOT NULL;
-ALTER TABLE "Expense" ALTER COLUMN currency SET DEFAULT 'USD'::"Currency";
+    -- تحديث عمود currency
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'Expense' AND column_name = 'currency' AND data_type = 'text') THEN
+        -- العمود موجود كـ TEXT، نحوله لـ Enum
+        ALTER TABLE "Expense" ADD COLUMN currency_temp "Currency";
+        
+        UPDATE "Expense" 
+        SET currency_temp = CASE 
+            WHEN currency = 'SAR' THEN 'SAR'::"Currency"
+            WHEN currency = 'EGP' THEN 'EGP'::"Currency"
+            ELSE 'USD'::"Currency"
+        END
+        WHERE currency_temp IS NULL;
+        
+        ALTER TABLE "Expense" DROP COLUMN currency CASCADE;
+        ALTER TABLE "Expense" RENAME COLUMN currency_temp TO currency;
+        ALTER TABLE "Expense" ALTER COLUMN currency SET NOT NULL;
+        ALTER TABLE "Expense" ALTER COLUMN currency SET DEFAULT 'USD'::"Currency";
+    ELSIF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'Expense' AND column_name = 'currency') THEN
+        -- العمود غير موجود، نضيفه
+        ALTER TABLE "Expense" ADD COLUMN currency "Currency" DEFAULT 'USD' NOT NULL;
+    END IF;
+END $$;
 
 -- ============================================
 -- الخطوة 5: تحديث الـ Indexes
 -- ============================================
 
--- حذف الـ indexes القديمة
+-- حذف الـ indexes القديمة (إذا كانت موجودة)
 DROP INDEX IF EXISTS "User_email_idx";
 DROP INDEX IF EXISTS "Task_createdAt_idx";
 DROP INDEX IF EXISTS "Expense_category_idx";
+DROP INDEX IF EXISTS "Expense_name_idx";
 
 -- إضافة الـ indexes الجديدة
 CREATE INDEX IF NOT EXISTS "User_username_idx" ON "User"(username);
+CREATE INDEX IF NOT EXISTS "Task_userId_idx" ON "Task"("userId");
+CREATE INDEX IF NOT EXISTS "Task_deadline_idx" ON "Task"(deadline);
 CREATE INDEX IF NOT EXISTS "Task_status_idx" ON "Task"(status);
 CREATE INDEX IF NOT EXISTS "Task_currency_idx" ON "Task"(currency);
+CREATE INDEX IF NOT EXISTS "Expense_userId_idx" ON "Expense"("userId");
+CREATE INDEX IF NOT EXISTS "Expense_date_idx" ON "Expense"(date);
 CREATE INDEX IF NOT EXISTS "Expense_currency_idx" ON "Expense"(currency);
 
 -- ============================================
