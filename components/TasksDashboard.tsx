@@ -26,6 +26,15 @@ export default function TasksDashboard() {
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [completingTask, setCompletingTask] = useState<Task | null>(null);
+  const [completionData, setCompletionData] = useState({
+    isFullyDelivered: false,
+    isFullyPaid: false,
+    collaboratorPaid: false,
+    collaboratorPaidAmount: 0,
+    collaboratorPaidCurrency: "USD",
+  });
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -41,6 +50,8 @@ export default function TasksDashboard() {
     collaboratorCut: 0,
     netProfit: 0,
     status: "ACTIVE",
+    advancePayment: 0,
+    advancePaymentCurrency: "USD",
   });
 
   const isAdmin = session?.user?.role === "ADMIN";
@@ -186,6 +197,8 @@ export default function TasksDashboard() {
       collaboratorCut: task.collaboratorCut,
       netProfit: task.netProfit,
       status: task.status,
+      advancePayment: 0,
+      advancePaymentCurrency: "USD",
     });
     setShowForm(true);
   };
@@ -193,6 +206,12 @@ export default function TasksDashboard() {
   const handleStatusChange = async (taskId: string, newStatus: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
+
+    if (newStatus === "COMPLETED") {
+      setCompletingTask(task);
+      setShowCompletionDialog(true);
+      return;
+    }
 
     try {
       await fetch(`/api/tasks/${taskId}`, {
@@ -203,6 +222,35 @@ export default function TasksDashboard() {
       await fetchTasks();
     } catch (error) {
       console.error("Error updating status:", error);
+    }
+  };
+
+  const handleCompleteTask = async () => {
+    if (!completingTask) return;
+
+    try {
+      await fetch(`/api/tasks/${completingTask.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...completingTask,
+          status: "COMPLETED",
+          ...completionData,
+        }),
+      });
+      await fetchTasks();
+      setShowCompletionDialog(false);
+      setCompletingTask(null);
+      setCompletionData({
+        isFullyDelivered: false,
+        isFullyPaid: false,
+        collaboratorPaid: false,
+        collaboratorPaidAmount: 0,
+        collaboratorPaidCurrency: "USD",
+      });
+    } catch (error) {
+      console.error("Error completing task:", error);
+      alert("حدث خطأ أثناء إتمام المهمة");
     }
   };
 
@@ -217,6 +265,8 @@ export default function TasksDashboard() {
       collaboratorCut: 0,
       netProfit: 0,
       status: "ACTIVE",
+      advancePayment: 0,
+      advancePaymentCurrency: "USD",
     });
     setEditingTask(null);
     setShowForm(false);
@@ -421,6 +471,117 @@ export default function TasksDashboard() {
           </div>
         )}
 
+        {/* Completion Dialog */}
+        {showCompletionDialog && completingTask && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                ✅ إتمام المهمة: {completingTask.title}
+              </h2>
+              
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="isFullyDelivered"
+                    checked={completionData.isFullyDelivered}
+                    onChange={(e) => setCompletionData({ ...completionData, isFullyDelivered: e.target.checked })}
+                    className="w-5 h-5"
+                  />
+                  <label htmlFor="isFullyDelivered" className="text-gray-900 dark:text-white">
+                    هل تم تسليم العمل بالكامل؟
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="isFullyPaid"
+                    checked={completionData.isFullyPaid}
+                    onChange={(e) => setCompletionData({ ...completionData, isFullyPaid: e.target.checked })}
+                    className="w-5 h-5"
+                  />
+                  <label htmlFor="isFullyPaid" className="text-gray-900 dark:text-white">
+                    هل تم دفع المبلغ بالكامل؟
+                  </label>
+                </div>
+
+                {completingTask.collaboratorName && (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="collaboratorPaid"
+                        checked={completionData.collaboratorPaid}
+                        onChange={(e) => setCompletionData({ ...completionData, collaboratorPaid: e.target.checked })}
+                        className="w-5 h-5"
+                      />
+                      <label htmlFor="collaboratorPaid" className="text-gray-900 dark:text-white">
+                        هل تم تحويل فلوس المتعاون ({completingTask.collaboratorName})؟
+                      </label>
+                    </div>
+
+                    {completionData.collaboratorPaid && (
+                      <div className="ml-8 space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            المبلغ المحول
+                          </label>
+                          <input
+                            type="number"
+                            value={completionData.collaboratorPaidAmount}
+                            onChange={(e) => setCompletionData({ ...completionData, collaboratorPaidAmount: Number(e.target.value) })}
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            العملة
+                          </label>
+                          <select
+                            value={completionData.collaboratorPaidCurrency}
+                            onChange={(e) => setCompletionData({ ...completionData, collaboratorPaidCurrency: e.target.value })}
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                          >
+                            <option value="USD">دولار أمريكي (USD)</option>
+                            <option value="SAR">ريال سعودي (SAR)</option>
+                            <option value="EGP">جنيه مصري (EGP)</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={handleCompleteTask}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition"
+                >
+                  إتمام المهمة
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCompletionDialog(false);
+                    setCompletingTask(null);
+                    setCompletionData({
+                      isFullyDelivered: false,
+                      isFullyPaid: false,
+                      collaboratorPaid: false,
+                      collaboratorPaidAmount: 0,
+                      collaboratorPaidCurrency: "USD",
+                    });
+                  }}
+                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg transition"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Add/Edit Form */}
         {showForm && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
@@ -543,6 +704,33 @@ export default function TasksDashboard() {
                   readOnly
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white bg-gray-100 dark:bg-gray-600"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  المبلغ المقدم من العميل
+                </label>
+                <input
+                  type="number"
+                  value={formData.advancePayment}
+                  onChange={(e) => setFormData({ ...formData, advancePayment: Number(e.target.value) })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  عملة المبلغ المقدم
+                </label>
+                <select
+                  value={formData.advancePaymentCurrency}
+                  onChange={(e) => setFormData({ ...formData, advancePaymentCurrency: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="USD">دولار أمريكي (USD)</option>
+                  <option value="SAR">ريال سعودي (SAR)</option>
+                  <option value="EGP">جنيه مصري (EGP)</option>
+                </select>
               </div>
 
               <div>

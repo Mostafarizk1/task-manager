@@ -37,20 +37,30 @@ model User {
 }
 
 model Task {
-  id               String     @id @default(cuid())
-  title            String
-  clientName       String
-  deadline         DateTime
-  totalPrice       Float
-  currency         Currency   @default(USD)
-  collaboratorName String?
-  collaboratorCut  Float      @default(0)
-  netProfit        Float
-  status           TaskStatus @default(ACTIVE)
-  userId           String
-  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
+  id                      String     @id @default(cuid())
+  title                   String
+  clientName              String
+  deadline                DateTime
+  totalPrice              Float
+  currency                Currency   @default(USD)
+  collaboratorName        String?
+  collaboratorCut         Float      @default(0)
+  netProfit               Float
+  status                  TaskStatus @default(ACTIVE)
+  userId                  String
+  user                    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Payment tracking
+  advancePayment          Float      @default(0)
+  advancePaymentCurrency  Currency   @default(USD)
+  isFullyDelivered        Boolean    @default(false)
+  isFullyPaid             Boolean    @default(false)
+  collaboratorPaid        Boolean    @default(false)
+  collaboratorPaidAmount  Float      @default(0)
+  collaboratorPaidCurrency Currency  @default(USD)
+  
+  createdAt               DateTime   @default(now())
+  updatedAt               DateTime   @updatedAt
 
   @@index([userId])
   @@index([deadline])
