@@ -26,7 +26,7 @@ export default async function AdminPanelPage() {
 
   const usersWithStats = users.map((user) => {
     const totalRevenue = user.tasks.reduce((sum, task) => sum + task.netProfit, 0);
-    const completedTasks = user.tasks.filter((t) => t.status === "DONE").length;
+    const completedTasks = user.tasks.filter((t) => t.status === "COMPLETED").length;
     
     return {
       id: user.id,
@@ -35,8 +35,17 @@ export default async function AdminPanelPage() {
       completedTasks,
       totalRevenue,
       tasks: user.tasks.map((task) => ({
-        ...task,
+        id: task.id,
+        title: task.title,
+        clientName: task.clientName,
         deadline: task.deadline.toISOString(),
+        totalPrice: task.totalPrice,
+        currency: task.currency,
+        collaboratorName: task.collaboratorName,
+        collaboratorCut: task.collaboratorCut,
+        netProfit: task.netProfit,
+        status: task.status,
+        userId: task.userId,
         createdAt: task.createdAt.toISOString(),
         updatedAt: task.updatedAt.toISOString(),
       })),

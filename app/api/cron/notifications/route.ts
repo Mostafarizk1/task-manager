@@ -8,14 +8,14 @@ export async function GET() {
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(23, 59, 59, 999);
 
-    // Find tasks with deadline today or tomorrow and status not DONE
+    // Find tasks with deadline today or tomorrow and status not COMPLETED
     const tasks = await prisma.task.findMany({
       where: {
         deadline: {
           lte: tomorrow,
         },
         status: {
-          not: "DONE",
+          not: "COMPLETED",
         },
       },
       include: {
