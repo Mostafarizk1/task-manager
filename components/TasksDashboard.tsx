@@ -15,6 +15,7 @@ interface Task {
   collaboratorCut: number;
   netProfit: number;
   status: string;
+  userId: string;
   createdAt: string;
 }
 
@@ -47,7 +48,7 @@ export default function TasksDashboard() {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     
-    const stats: { [key: string]: { count: number; revenue: number; month: string } } = {};
+    const stats: { [key: string]: { count: number; revenue: { [currency: string]: number }; month: string } } = {};
     
     tasks.forEach(task => {
       const taskDate = new Date(task.createdAt);
@@ -55,12 +56,16 @@ export default function TasksDashboard() {
       const monthName = taskDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
       
       if (!stats[monthKey]) {
-        stats[monthKey] = { count: 0, revenue: 0, month: monthName };
+        stats[monthKey] = { count: 0, revenue: {}, month: monthName };
       }
       
       stats[monthKey].count++;
       if (isAdmin) {
-        stats[monthKey].revenue += task.netProfit;
+        const currency = task.currency || 'USD';
+        if (!stats[monthKey].revenue[currency]) {
+          stats[monthKey].revenue[currency] = 0;
+        }
+        stats[monthKey].revenue[currency] += task.netProfit;
       }
     });
     
@@ -276,9 +281,11 @@ export default function TasksDashboard() {
                       <p className="text-xs text-gray-600 dark:text-gray-400">مهمة</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                        ${stat.revenue.toFixed(2)}
-                      </p>
+                      {Object.entries(stat.revenue).map(([currency, amount]) => (
+                        <p key={currency} className="text-lg font-bold text-green-600 dark:text-green-400">
+                          {currency} {amount.toFixed(2)}
+                        </p>
+                      ))}
                       <p className="text-xs text-gray-600 dark:text-gray-400">صافي الربح</p>
                     </div>
                   </div>
@@ -334,87 +341,83 @@ export default function TasksDashboard() {
                 />
               </div>
 
-              {isAdmin && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      السعر الإجمالي
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      value={formData.totalPrice}
-                      onChange={(e) => {
-                        const total = Number(e.target.value);
-                        setFormData({ 
-                          ...formData, 
-                          totalPrice: total,
-                          netProfit: calculateNetProfit(total, formData.collaboratorCut)
-                        });
-                      }}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  السعر الإجمالي
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={formData.totalPrice}
+                  onChange={(e) => {
+                    const total = Number(e.target.value);
+                    setFormData({ 
+                      ...formData, 
+                      totalPrice: total,
+                      netProfit: calculateNetProfit(total, formData.collaboratorCut)
+                    });
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                />
+              </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      العملة
-                    </label>
-                    <select
-                      value={formData.currency}
-                      onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                    >
-                      <option value="USD">دولار أمريكي (USD)</option>
-                      <option value="SAR">ريال سعودي (SAR)</option>
-                      <option value="EGP">جنيه مصري (EGP)</option>
-                    </select>
-                  </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  العملة
+                </label>
+                <select
+                  value={formData.currency}
+                  onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="USD">دولار أمريكي (USD)</option>
+                  <option value="SAR">ريال سعودي (SAR)</option>
+                  <option value="EGP">جنيه مصري (EGP)</option>
+                </select>
+              </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      اسم المتعاون (اختياري)
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.collaboratorName}
-                      onChange={(e) => setFormData({ ...formData, collaboratorName: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  اسم المتعاون (اختياري)
+                </label>
+                <input
+                  type="text"
+                  value={formData.collaboratorName}
+                  onChange={(e) => setFormData({ ...formData, collaboratorName: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                />
+              </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      نصيب المتعاون
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.collaboratorCut}
-                      onChange={(e) => {
-                        const cut = Number(e.target.value);
-                        setFormData({ 
-                          ...formData, 
-                          collaboratorCut: cut,
-                          netProfit: calculateNetProfit(formData.totalPrice, cut)
-                        });
-                      }}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  نصيب المتعاون
+                </label>
+                <input
+                  type="number"
+                  value={formData.collaboratorCut}
+                  onChange={(e) => {
+                    const cut = Number(e.target.value);
+                    setFormData({ 
+                      ...formData, 
+                      collaboratorCut: cut,
+                      netProfit: calculateNetProfit(formData.totalPrice, cut)
+                    });
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                />
+              </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      صافي الربح
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.netProfit}
-                      readOnly
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white bg-gray-100 dark:bg-gray-600"
-                    />
-                  </div>
-                </>
-              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  صافي الربح
+                </label>
+                <input
+                  type="number"
+                  value={formData.netProfit}
+                  readOnly
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white bg-gray-100 dark:bg-gray-600"
+                />
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -451,18 +454,119 @@ export default function TasksDashboard() {
         )}
 
         {/* Tasks List */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            المهام ({tasks.length})
-          </h2>
-          
-          {tasks.length === 0 ? (
-            <p className="text-gray-600 dark:text-gray-400 text-center py-8">
-              لا توجد مهام حالياً
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {tasks.map((task) => (
+        {isAdmin ? (
+          <>
+            {/* ADMIN's Own Tasks */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                مهامي الشخصية ({tasks.filter(t => t.userId === session?.user?.id).length})
+              </h2>
+              
+              {tasks.filter(t => t.userId === session?.user?.id).length === 0 ? (
+                <p className="text-gray-600 dark:text-gray-400 text-center py-8">
+                  لا توجد مهام شخصية حالياً
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {tasks.filter(t => t.userId === session?.user?.id).map((task) => (
+                    <div
+                      key={task.id}
+                      className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition"
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                            {task.title}
+                          </h3>
+                          <p className="text-gray-600 dark:text-gray-400">
+                            العميل: {task.clientName}
+                          </p>
+                          {task.collaboratorName && (
+                            <p className="text-gray-600 dark:text-gray-400">
+                              المتعاون: {task.collaboratorName}
+                            </p>
+                          )}
+                        </div>
+                        <span className={`${getStatusColor(task.status)} text-white px-3 py-1 rounded-full text-sm`}>
+                          {getStatusText(task.status)}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 mb-3">
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">تاريخ الإنشاء</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">
+                            {new Date(task.createdAt).toLocaleDateString("ar-EG")}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">الموعد النهائي</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">
+                            {new Date(task.deadline).toLocaleDateString("ar-EG")}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">السعر الإجمالي</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">
+                            {task.currency} {task.totalPrice}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">نصيب المتعاون</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">
+                            {task.currency} {task.collaboratorCut}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">صافي الربح</p>
+                          <p className="font-semibold text-green-600 dark:text-green-400">
+                            {task.currency} {task.netProfit}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 mt-4">
+                        <button
+                          onClick={() => handleEdit(task)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
+                        >
+                          تعديل
+                        </button>
+                        <button
+                          onClick={() => handleDelete(task.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition"
+                        >
+                          حذف
+                        </button>
+                        <select
+                          value={task.status}
+                          onChange={(e) => handleStatusChange(task.id, e.target.value)}
+                          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                        >
+                          <option value="ACTIVE">نشط</option>
+                          <option value="REVIEW">مراجعة</option>
+                          <option value="COMPLETED">مكتمل</option>
+                        </select>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Team Tasks */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                مهام الفريق ({tasks.filter(t => t.userId !== session?.user?.id).length})
+              </h2>
+              
+              {tasks.filter(t => t.userId !== session?.user?.id).length === 0 ? (
+                <p className="text-gray-600 dark:text-gray-400 text-center py-8">
+                  لا توجد مهام للفريق حالياً
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {tasks.filter(t => t.userId !== session?.user?.id).map((task) => (
                 <div
                   key={task.id}
                   className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition"
@@ -525,57 +629,112 @@ export default function TasksDashboard() {
                   </div>
 
                   <div className="flex gap-2 mt-4">
-                    {!isAdmin && task.status !== "COMPLETED" && (
-                      <>
-                        <button
-                          onClick={() => handleEdit(task)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
-                        >
-                          تعديل
-                        </button>
-                        <select
-                          value={task.status}
-                          onChange={(e) => handleStatusChange(task.id, e.target.value)}
-                          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                        >
-                          <option value="ACTIVE">نشط</option>
-                          <option value="REVIEW">مراجعة</option>
-                          <option value="COMPLETED">مكتمل</option>
-                        </select>
-                      </>
-                    )}
-                    
-                    {isAdmin && (
-                      <>
-                        <button
-                          onClick={() => handleEdit(task)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
-                        >
-                          تعديل
-                        </button>
-                        <button
-                          onClick={() => handleDelete(task.id)}
-                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition"
-                        >
-                          حذف
-                        </button>
-                        <select
-                          value={task.status}
-                          onChange={(e) => handleStatusChange(task.id, e.target.value)}
-                          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                        >
-                          <option value="ACTIVE">نشط</option>
-                          <option value="REVIEW">مراجعة</option>
-                          <option value="COMPLETED">مكتمل</option>
-                        </select>
-                      </>
-                    )}
+                    <button
+                      onClick={() => handleEdit(task)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
+                    >
+                      تعديل
+                    </button>
+                    <button
+                      onClick={() => handleDelete(task.id)}
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition"
+                    >
+                      حذف
+                    </button>
+                    <select
+                      value={task.status}
+                      onChange={(e) => handleStatusChange(task.id, e.target.value)}
+                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="ACTIVE">نشط</option>
+                      <option value="REVIEW">مراجعة</option>
+                      <option value="COMPLETED">مكتمل</option>
+                    </select>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
+          </>
+        ) : (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              مهامي ({tasks.length})
+            </h2>
+            
+            {tasks.length === 0 ? (
+              <p className="text-gray-600 dark:text-gray-400 text-center py-8">
+                لا توجد مهام حالياً
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {tasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition"
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                          {task.title}
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-400">
+                          العميل: {task.clientName}
+                        </p>
+                        {task.collaboratorName && (
+                          <p className="text-gray-600 dark:text-gray-400">
+                            المتعاون: {task.collaboratorName}
+                          </p>
+                        )}
+                      </div>
+                      <span className={`${getStatusColor(task.status)} text-white px-3 py-1 rounded-full text-sm`}>
+                        {getStatusText(task.status)}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-3">
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">تاريخ الإنشاء</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
+                          {new Date(task.createdAt).toLocaleDateString("ar-EG")}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">الموعد النهائي</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
+                          {new Date(task.deadline).toLocaleDateString("ar-EG")}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 mt-4">
+                      {task.status !== "COMPLETED" && (
+                        <>
+                          <button
+                            onClick={() => handleEdit(task)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
+                          >
+                            تعديل
+                          </button>
+                          <select
+                            value={task.status}
+                            onChange={(e) => handleStatusChange(task.id, e.target.value)}
+                            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                          >
+                            <option value="ACTIVE">نشط</option>
+                            <option value="REVIEW">مراجعة</option>
+                            <option value="COMPLETED">مكتمل</option>
+                          </select>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
