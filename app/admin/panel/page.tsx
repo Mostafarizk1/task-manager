@@ -13,7 +13,9 @@ export default async function AdminPanelPage() {
 
   const users = await prisma.user.findMany({
     where: {
-      role: "USER",
+      id: {
+        not: session.user.id,
+      },
     },
     include: {
       tasks: {
@@ -31,6 +33,7 @@ export default async function AdminPanelPage() {
     return {
       id: user.id,
       username: user.username,
+      role: user.role,
       totalTasks: user.tasks.length,
       completedTasks,
       totalRevenue,

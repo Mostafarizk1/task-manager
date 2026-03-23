@@ -25,6 +25,12 @@ export default function TasksDashboard() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
   const [formData, setFormData] = useState({
     title: "",
     clientName: "",
@@ -127,6 +133,44 @@ export default function TasksDashboard() {
       await fetchTasks();
     } catch (error) {
       console.error("Error deleting task:", error);
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      alert("كلمة المرور الجديدة وتأكيد كلمة المرور غير متطابقين");
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      alert("كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/users/change-password", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("تم تغيير كلمة المرور بنجاح");
+        setShowPasswordForm(false);
+        setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      } else {
+        alert(data.error || "حدث خطأ أثناء تغيير كلمة المرور");
+      }
+    } catch (error) {
+      console.error("Error changing password:", error);
+      alert("حدث خطأ أثناء تغيير كلمة المرور");
     }
   };
 
@@ -246,7 +290,19 @@ export default function TasksDashboard() {
                 </>
               )}
               <button
-                onClick={() => setShowForm(!showForm)}
+                onClick={() => {
+                  setShowPasswordForm(!showPasswordForm);
+                  setShowForm(false);
+                }}
+                className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-lg transition"
+              >
+                🔒 تغيير كلمة المرور
+              </button>
+              <button
+                onClick={() => {
+                  setShowForm(!showForm);
+                  setShowPasswordForm(false);
+                }}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition"
               >
                 {showForm ? "إلغاء" : "+ مهمة جديدة"}
@@ -292,6 +348,76 @@ export default function TasksDashboard() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Password Change Form */}
+        {showPasswordForm && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              🔒 تغيير كلمة المرور
+            </h2>
+            <form onSubmit={handlePasswordChange} className="max-w-md">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  كلمة المرور الحالية
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={passwordData.currentPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  كلمة المرور الجديدة
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  تأكيد كلمة المرور الجديدة
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition"
+                >
+                  تغيير كلمة المرور
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPasswordForm(false);
+                    setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+                  }}
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg transition"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </form>
           </div>
         )}
 

@@ -20,6 +20,7 @@ interface Task {
 interface UserStats {
   id: string;
   username: string;
+  role: string;
   totalTasks: number;
   completedTasks: number;
   totalRevenue: number;
@@ -28,6 +29,30 @@ interface UserStats {
 
 export default function AdminPanelClient({ users }: { users: UserStats[] }) {
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [changingRole, setChangingRole] = useState<string | null>(null);
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    try {
+      const res = await fetch(`/api/users/${userId}/role`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole }),
+      });
+
+      if (res.ok) {
+        alert("تم تغيير الدور بنجاح");
+        window.location.reload();
+      } else {
+        const data = await res.json();
+        alert(data.error || "حدث خطأ");
+      }
+    } catch (error) {
+      console.error("Error changing role:", error);
+      alert("حدث خطأ أثناء تغيير الدور");
+    } finally {
+      setChangingRole(null);
+    }
+  };
 
   const selectedUserData = users.find((u) => u.id === selectedUser);
 
@@ -63,10 +88,56 @@ export default function AdminPanelClient({ users }: { users: UserStats[] }) {
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                   {user.username}
                 </h3>
-                <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm">
-                  مستخدم
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`${user.role === 'ADMIN' ? 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200' : 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'} px-3 py-1 rounded-full text-sm`}>
+                    {user.role === 'ADMIN' ? 'مدير' : 'مستخدم'}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setChangingRole(user.id);
+                    }}
+                    className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-lg text-sm transition"
+                  >
+                    تغيير الدور
+                  </button>
+                </div>
               </div>
+              
+              {changingRole === user.id && (
+                <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">تغيير دور {user.username} إلى:</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRoleChange(user.id, 'ADMIN');
+                      }}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                    >
+                      مدير
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRoleChange(user.id, 'USER');
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                    >
+                      مستخدم
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setChangingRole(null);
+                      }}
+                      className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm transition"
+                    >
+                      إلغاء
+                    </button>
+                  </div>
+                </div>
+              )}
               
               <div className="space-y-2">
                 <div className="flex justify-between">
