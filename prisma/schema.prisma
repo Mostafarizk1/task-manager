@@ -8,11 +8,28 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum Role {
+  ADMIN
+  USER
+}
+
+enum Currency {
+  SAR
+  USD
+  EGP
+}
+
+enum TaskStatus {
+  ACTIVE
+  REVIEW
+  COMPLETED
+}
+
 model User {
   id        String    @id @default(cuid())
   username  String    @unique
   password  String
-  role      String    @default("USER")
+  role      Role      @default(USER)
   tasks     Task[]
   expenses  Expense[]
   createdAt DateTime  @default(now())
@@ -20,32 +37,32 @@ model User {
 }
 
 model Task {
-  id               String   @id @default(cuid())
+  id               String     @id @default(cuid())
   title            String
   clientName       String
   deadline         DateTime
   totalPrice       Float
-  currency         String   @default("USD")
+  currency         Currency   @default(USD)
   collaboratorName String?
-  collaboratorCut  Float    @default(0)
+  collaboratorCut  Float      @default(0)
   netProfit        Float
-  status           String   @default("TODO")
+  status           TaskStatus @default(ACTIVE)
   userId           String
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 
   @@index([userId])
   @@index([deadline])
   @@index([status])
+  @@index([currency])
 }
 
 model Expense {
   id          String   @id @default(cuid())
-  title       String
+  type        String
   amount      Float
-  currency    String   @default("USD")
-  category    String
+  currency    Currency @default(USD)
   description String?
   date        DateTime @default(now())
   userId      String
@@ -55,5 +72,5 @@ model Expense {
 
   @@index([userId])
   @@index([date])
-  @@index([category])
+  @@index([currency])
 }

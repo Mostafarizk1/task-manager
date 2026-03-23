@@ -33,7 +33,7 @@ export default function TasksDashboard() {
     collaboratorName: "",
     collaboratorCut: 0,
     netProfit: 0,
-    status: "TODO",
+    status: "ACTIVE",
   });
 
   const isAdmin = session?.user?.role === "ADMIN";
@@ -167,7 +167,7 @@ export default function TasksDashboard() {
       collaboratorName: "",
       collaboratorCut: 0,
       netProfit: 0,
-      status: "TODO",
+      status: "ACTIVE",
     });
     setEditingTask(null);
     setShowForm(false);
@@ -179,18 +179,18 @@ export default function TasksDashboard() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "TODO": return "bg-gray-500";
-      case "IN_PROGRESS": return "bg-blue-500";
-      case "DONE": return "bg-green-500";
+      case "ACTIVE": return "bg-blue-500";
+      case "REVIEW": return "bg-yellow-500";
+      case "COMPLETED": return "bg-green-500";
       default: return "bg-gray-500";
     }
   };
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case "TODO": return "قيد الانتظار";
-      case "IN_PROGRESS": return "جاري العمل";
-      case "DONE": return "مكتملة";
+      case "ACTIVE": return "نشط";
+      case "REVIEW": return "مراجعة";
+      case "COMPLETED": return "مكتمل";
       default: return status;
     }
   };
@@ -226,14 +226,26 @@ export default function TasksDashboard() {
                   >
                     👥 إدارة المستخدمين
                   </a>
-                  <button
-                    onClick={() => setShowForm(!showForm)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition"
+                  <a
+                    href="/admin/expenses"
+                    className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg transition"
                   >
-                    {showForm ? "إلغاء" : "+ مهمة جديدة"}
-                  </button>
+                    💰 المصاريف النثرية
+                  </a>
+                  <a
+                    href="/admin/reports"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition"
+                  >
+                    📊 التقارير الشهرية
+                  </a>
                 </>
               )}
+              <button
+                onClick={() => setShowForm(!showForm)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition"
+              >
+                {showForm ? "إلغاء" : "+ مهمة جديدة"}
+              </button>
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}
                 className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition"
@@ -277,7 +289,7 @@ export default function TasksDashboard() {
         )}
 
         {/* Add/Edit Form */}
-        {showForm && isAdmin && (
+        {showForm && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
               {editingTask ? "تعديل المهمة" : "إضافة مهمة جديدة"}
@@ -322,83 +334,87 @@ export default function TasksDashboard() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  السعر الإجمالي
-                </label>
-                <input
-                  type="number"
-                  required
-                  value={formData.totalPrice}
-                  onChange={(e) => {
-                    const total = Number(e.target.value);
-                    setFormData({ 
-                      ...formData, 
-                      totalPrice: total,
-                      netProfit: calculateNetProfit(total, formData.collaboratorCut)
-                    });
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                />
-              </div>
+              {isAdmin && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      السعر الإجمالي
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      value={formData.totalPrice}
+                      onChange={(e) => {
+                        const total = Number(e.target.value);
+                        setFormData({ 
+                          ...formData, 
+                          totalPrice: total,
+                          netProfit: calculateNetProfit(total, formData.collaboratorCut)
+                        });
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  العملة
-                </label>
-                <select
-                  value={formData.currency}
-                  onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="USD">دولار أمريكي (USD)</option>
-                  <option value="SAR">ريال سعودي (SAR)</option>
-                  <option value="EGP">جنيه مصري (EGP)</option>
-                </select>
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      العملة
+                    </label>
+                    <select
+                      value={formData.currency}
+                      onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="USD">دولار أمريكي (USD)</option>
+                      <option value="SAR">ريال سعودي (SAR)</option>
+                      <option value="EGP">جنيه مصري (EGP)</option>
+                    </select>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  اسم المتعاون (اختياري)
-                </label>
-                <input
-                  type="text"
-                  value={formData.collaboratorName}
-                  onChange={(e) => setFormData({ ...formData, collaboratorName: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      اسم المتعاون (اختياري)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.collaboratorName}
+                      onChange={(e) => setFormData({ ...formData, collaboratorName: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  نصيب المتعاون
-                </label>
-                <input
-                  type="number"
-                  value={formData.collaboratorCut}
-                  onChange={(e) => {
-                    const cut = Number(e.target.value);
-                    setFormData({ 
-                      ...formData, 
-                      collaboratorCut: cut,
-                      netProfit: calculateNetProfit(formData.totalPrice, cut)
-                    });
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      نصيب المتعاون
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.collaboratorCut}
+                      onChange={(e) => {
+                        const cut = Number(e.target.value);
+                        setFormData({ 
+                          ...formData, 
+                          collaboratorCut: cut,
+                          netProfit: calculateNetProfit(formData.totalPrice, cut)
+                        });
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  صافي الربح
-                </label>
-                <input
-                  type="number"
-                  value={formData.netProfit}
-                  readOnly
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white bg-gray-100 dark:bg-gray-600"
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      صافي الربح
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.netProfit}
+                      readOnly
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white bg-gray-100 dark:bg-gray-600"
+                    />
+                  </div>
+                </>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -409,9 +425,9 @@ export default function TasksDashboard() {
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
                 >
-                  <option value="TODO">قيد الانتظار</option>
-                  <option value="IN_PROGRESS">جاري العمل</option>
-                  <option value="DONE">مكتملة</option>
+                  <option value="ACTIVE">نشط</option>
+                  <option value="REVIEW">مراجعة</option>
+                  <option value="COMPLETED">مكتمل</option>
                 </select>
               </div>
 
@@ -509,23 +525,24 @@ export default function TasksDashboard() {
                   </div>
 
                   <div className="flex gap-2 mt-4">
-                    {!isAdmin && task.status !== "DONE" && (
-                      <button
-                        onClick={() => handleStatusChange(task.id, "DONE")}
-                        className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition font-semibold"
-                      >
-                        ✓ Mark Done
-                      </button>
-                    )}
-                    {!isAdmin && task.status !== "DONE" && (
-                      <select
-                        value={task.status}
-                        onChange={(e) => handleStatusChange(task.id, e.target.value)}
-                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                      >
-                        <option value="TODO">قيد الانتظار</option>
-                        <option value="IN_PROGRESS">جاري العمل</option>
-                      </select>
+                    {!isAdmin && task.status !== "COMPLETED" && (
+                      <>
+                        <button
+                          onClick={() => handleEdit(task)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
+                        >
+                          تعديل
+                        </button>
+                        <select
+                          value={task.status}
+                          onChange={(e) => handleStatusChange(task.id, e.target.value)}
+                          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                        >
+                          <option value="ACTIVE">نشط</option>
+                          <option value="REVIEW">مراجعة</option>
+                          <option value="COMPLETED">مكتمل</option>
+                        </select>
+                      </>
                     )}
                     
                     {isAdmin && (
@@ -542,6 +559,15 @@ export default function TasksDashboard() {
                         >
                           حذف
                         </button>
+                        <select
+                          value={task.status}
+                          onChange={(e) => handleStatusChange(task.id, e.target.value)}
+                          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                        >
+                          <option value="ACTIVE">نشط</option>
+                          <option value="REVIEW">مراجعة</option>
+                          <option value="COMPLETED">مكتمل</option>
+                        </select>
                       </>
                     )}
                   </div>

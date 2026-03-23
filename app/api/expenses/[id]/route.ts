@@ -15,44 +15,28 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    if (session.user.role !== "ADMIN") {
+      return NextResponse.json({ error: "Forbidden - Admin only" }, { status: 403 });
+    }
+
     const body = await request.json();
-    const {
-      title,
-      clientName,
-      deadline,
-      totalPrice,
-      currency,
-      collaboratorName,
-      collaboratorCut,
-      status,
-    } = body;
+    const { type, amount, currency, description, date } = body;
 
-    const collaboratorCutValue = collaboratorCut || 0;
-    const netProfit = totalPrice - collaboratorCutValue;
-
-    const whereClause = session.user.role === "ADMIN"
-      ? { id: params.id }
-      : { id: params.id, userId: session.user.id };
-
-    const task = await prisma.task.update({
-      where: whereClause,
+    const expense = await prisma.expense.update({
+      where: { id: params.id },
       data: {
-        title,
-        clientName,
-        deadline: new Date(deadline),
-        totalPrice,
+        type,
+        amount,
         currency: currency || "USD",
-        collaboratorName,
-        collaboratorCut: collaboratorCutValue,
-        netProfit,
-        status,
+        description,
+        date: date ? new Date(date) : undefined,
       },
     });
 
-    return NextResponse.json(task);
+    return NextResponse.json(expense);
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to update task" },
+      { error: "Failed to update expense" },
       { status: 500 }
     );
   }
@@ -70,18 +54,18 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const whereClause = session.user.role === "ADMIN"
-      ? { id: params.id }
-      : { id: params.id, userId: session.user.id };
+    if (session.user.role !== "ADMIN") {
+      return NextResponse.json({ error: "Forbidden - Admin only" }, { status: 403 });
+    }
 
-    await prisma.task.delete({
-      where: whereClause,
+    await prisma.expense.delete({
+      where: { id: params.id },
     });
 
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to delete task" },
+      { error: "Failed to delete expense" },
       { status: 500 }
     );
   }

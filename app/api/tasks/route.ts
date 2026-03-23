@@ -11,12 +11,21 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const whereClause = session.user.role === "ADMIN" 
+      ? {} 
+      : { userId: session.user.id };
+
     const tasks = await prisma.task.findMany({
-      where: {
-        userId: session.user.id,
-      },
+      where: whereClause,
       orderBy: {
         deadline: "asc",
+      },
+      include: {
+        user: {
+          select: {
+            username: true,
+          },
+        },
       },
     });
 
@@ -46,9 +55,11 @@ export async function POST(request: NextRequest) {
       currency,
       collaboratorName,
       collaboratorCut,
-      netProfit,
       status,
     } = body;
+
+    const collaboratorCutValue = collaboratorCut || 0;
+    const netProfit = totalPrice - collaboratorCutValue;
 
     const task = await prisma.task.create({
       data: {
@@ -58,9 +69,9 @@ export async function POST(request: NextRequest) {
         totalPrice,
         currency: currency || "USD",
         collaboratorName,
-        collaboratorCut,
+        collaboratorCut: collaboratorCutValue,
         netProfit,
-        status,
+        status: status || "ACTIVE",
         userId: session.user.id,
       },
     });
