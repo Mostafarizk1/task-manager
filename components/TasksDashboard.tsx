@@ -16,7 +16,15 @@ interface Task {
   netProfit: number;
   status: string;
   userId: string;
+  isFullyDelivered: boolean;
+  isFullyPaid: boolean;
+  clientPaidAmount: number;
+  clientRemainingAmount: number;
+  collaboratorPaid: boolean;
+  collaboratorPaidAmount: number;
+  collaboratorPaidCurrency: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export default function TasksDashboard() {
@@ -490,30 +498,64 @@ export default function TasksDashboard() {
               </h2>
               
               <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="isFullyDelivered"
-                    checked={completionData.isFullyDelivered}
-                    onChange={(e) => setCompletionData({ ...completionData, isFullyDelivered: e.target.checked })}
-                    className="w-5 h-5"
-                  />
-                  <label htmlFor="isFullyDelivered" className="text-gray-900 dark:text-white">
+                <div>
+                  <p className="text-gray-900 dark:text-white font-medium mb-2">
                     هل تم تسليم العمل بالكامل؟
-                  </label>
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setCompletionData({ ...completionData, isFullyDelivered: true })}
+                      className={`flex-1 px-4 py-2 rounded-lg transition ${
+                        completionData.isFullyDelivered
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      نعم
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCompletionData({ ...completionData, isFullyDelivered: false })}
+                      className={`flex-1 px-4 py-2 rounded-lg transition ${
+                        !completionData.isFullyDelivered
+                          ? 'bg-red-600 text-white'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      لا
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="isFullyPaid"
-                    checked={completionData.isFullyPaid}
-                    onChange={(e) => setCompletionData({ ...completionData, isFullyPaid: e.target.checked })}
-                    className="w-5 h-5"
-                  />
-                  <label htmlFor="isFullyPaid" className="text-gray-900 dark:text-white">
+                <div>
+                  <p className="text-gray-900 dark:text-white font-medium mb-2">
                     هل تم دفع المبلغ بالكامل؟
-                  </label>
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setCompletionData({ ...completionData, isFullyPaid: true })}
+                      className={`flex-1 px-4 py-2 rounded-lg transition ${
+                        completionData.isFullyPaid
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      نعم
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCompletionData({ ...completionData, isFullyPaid: false })}
+                      className={`flex-1 px-4 py-2 rounded-lg transition ${
+                        !completionData.isFullyPaid
+                          ? 'bg-red-600 text-white'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      لا
+                    </button>
+                  </div>
                 </div>
 
                 {!completionData.isFullyPaid && (
@@ -556,50 +598,35 @@ export default function TasksDashboard() {
                 )}
 
                 {completingTask.collaboratorName && (
-                  <>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        id="collaboratorPaid"
-                        checked={completionData.collaboratorPaid}
-                        onChange={(e) => setCompletionData({ ...completionData, collaboratorPaid: e.target.checked })}
-                        className="w-5 h-5"
-                      />
-                      <label htmlFor="collaboratorPaid" className="text-gray-900 dark:text-white">
-                        هل تم تحويل فلوس المتعاون ({completingTask.collaboratorName})؟
-                      </label>
+                  <div>
+                    <p className="text-gray-900 dark:text-white font-medium mb-2">
+                      هل تم تحويل فلوس المتعاون ({completingTask.collaboratorName})؟
+                    </p>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setCompletionData({ ...completionData, collaboratorPaid: true })}
+                        className={`flex-1 px-4 py-2 rounded-lg transition ${
+                          completionData.collaboratorPaid
+                            ? 'bg-green-600 text-white'
+                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        نعم
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCompletionData({ ...completionData, collaboratorPaid: false })}
+                        className={`flex-1 px-4 py-2 rounded-lg transition ${
+                          !completionData.collaboratorPaid
+                            ? 'bg-red-600 text-white'
+                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        لا
+                      </button>
                     </div>
-
-                    {completionData.collaboratorPaid && (
-                      <div className="ml-8 space-y-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            المبلغ المحول
-                          </label>
-                          <input
-                            type="number"
-                            value={completionData.collaboratorPaidAmount}
-                            onChange={(e) => setCompletionData({ ...completionData, collaboratorPaidAmount: Number(e.target.value) })}
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            العملة
-                          </label>
-                          <select
-                            value={completionData.collaboratorPaidCurrency}
-                            onChange={(e) => setCompletionData({ ...completionData, collaboratorPaidCurrency: e.target.value })}
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                          >
-                            <option value="USD">دولار أمريكي (USD)</option>
-                            <option value="SAR">ريال سعودي (SAR)</option>
-                            <option value="EGP">جنيه مصري (EGP)</option>
-                          </select>
-                        </div>
-                      </div>
-                    )}
-                  </>
+                  </div>
                 )}
               </div>
 
@@ -890,6 +917,31 @@ export default function TasksDashboard() {
                         </div>
                       </div>
 
+                      {task.status === "COMPLETED" && (
+                        <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">التسليم:</span>
+                            <span className={`text-sm font-semibold ${task.isFullyDelivered ? 'text-green-600' : 'text-red-600'}`}>
+                              {task.isFullyDelivered ? '✅ تم التسليم' : '❌ لم يتم'}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">الدفع:</span>
+                            <span className={`text-sm font-semibold ${task.isFullyPaid ? 'text-green-600' : 'text-orange-600'}`}>
+                              {task.isFullyPaid ? '✅ تم الدفع بالكامل' : `⚠️ مدفوع ${task.clientPaidAmount} - باقي ${task.clientRemainingAmount}`}
+                            </span>
+                          </div>
+                          {task.collaboratorName && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-600 dark:text-gray-400">المتعاون:</span>
+                              <span className={`text-sm font-semibold ${task.collaboratorPaid ? 'text-green-600' : 'text-red-600'}`}>
+                                {task.collaboratorPaid ? '✅ تم التحويل' : '❌ لم يتم'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       <div className="flex gap-2 mt-4">
                         <button
                           onClick={() => handleEdit(task)}
@@ -992,6 +1044,31 @@ export default function TasksDashboard() {
                       </>
                     )}
                   </div>
+
+                  {task.status === "COMPLETED" && (
+                    <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">التسليم:</span>
+                        <span className={`text-sm font-semibold ${task.isFullyDelivered ? 'text-green-600' : 'text-red-600'}`}>
+                          {task.isFullyDelivered ? '✅ تم التسليم' : '❌ لم يتم'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">الدفع:</span>
+                        <span className={`text-sm font-semibold ${task.isFullyPaid ? 'text-green-600' : 'text-orange-600'}`}>
+                          {task.isFullyPaid ? '✅ تم الدفع بالكامل' : `⚠️ مدفوع ${task.clientPaidAmount} - باقي ${task.clientRemainingAmount}`}
+                        </span>
+                      </div>
+                      {task.collaboratorName && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">المتعاون:</span>
+                          <span className={`text-sm font-semibold ${task.collaboratorPaid ? 'text-green-600' : 'text-red-600'}`}>
+                            {task.collaboratorPaid ? '✅ تم التحويل' : '❌ لم يتم'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div className="flex gap-2 mt-4">
                     <button
