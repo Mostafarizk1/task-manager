@@ -31,6 +31,8 @@ export default function TasksDashboard() {
   const [completionData, setCompletionData] = useState({
     isFullyDelivered: false,
     isFullyPaid: false,
+    clientPaidAmount: 0,
+    clientRemainingAmount: 0,
     collaboratorPaid: false,
     collaboratorPaidAmount: 0,
     collaboratorPaidCurrency: "USD",
@@ -250,6 +252,8 @@ export default function TasksDashboard() {
       setCompletionData({
         isFullyDelivered: false,
         isFullyPaid: false,
+        clientPaidAmount: 0,
+        clientRemainingAmount: 0,
         collaboratorPaid: false,
         collaboratorPaidAmount: 0,
         collaboratorPaidCurrency: "USD",
@@ -512,6 +516,45 @@ export default function TasksDashboard() {
                   </label>
                 </div>
 
+                {!completionData.isFullyPaid && (
+                  <div className="ml-8 space-y-3 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        💰 المبلغ المدفوع
+                      </label>
+                      <input
+                        type="number"
+                        value={completionData.clientPaidAmount}
+                        onChange={(e) => {
+                          const paid = Number(e.target.value);
+                          const remaining = completingTask.totalPrice - paid;
+                          setCompletionData({ 
+                            ...completionData, 
+                            clientPaidAmount: paid,
+                            clientRemainingAmount: remaining > 0 ? remaining : 0
+                          });
+                        }}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        📊 المبلغ الباقي
+                      </label>
+                      <input
+                        type="number"
+                        value={completionData.clientRemainingAmount}
+                        readOnly
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white bg-gray-100 dark:bg-gray-600"
+                      />
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      السعر الإجمالي: {completingTask.totalPrice} {completingTask.currency}
+                    </div>
+                  </div>
+                )}
+
                 {completingTask.collaboratorName && (
                   <>
                     <div className="flex items-center gap-3">
@@ -574,6 +617,8 @@ export default function TasksDashboard() {
                     setCompletionData({
                       isFullyDelivered: false,
                       isFullyPaid: false,
+                      clientPaidAmount: 0,
+                      clientRemainingAmount: 0,
                       collaboratorPaid: false,
                       collaboratorPaidAmount: 0,
                       collaboratorPaidCurrency: "USD",
