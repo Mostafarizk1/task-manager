@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { signOut } from "next-auth/react";
 
@@ -185,6 +185,8 @@ export default function TasksDashboard() {
     }
   };
 
+  const formRef = useRef<HTMLDivElement>(null);
+
   const handleEdit = (task: Task) => {
     setEditingTask(task);
     setFormData({
@@ -201,6 +203,10 @@ export default function TasksDashboard() {
       advancePaymentCurrency: "USD",
     });
     setShowForm(true);
+    
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
   };
 
   const handleStatusChange = async (taskId: string, newStatus: string) => {
@@ -584,7 +590,7 @@ export default function TasksDashboard() {
 
         {/* Add/Edit Form */}
         {showForm && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+          <div ref={formRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
               {editingTask ? "تعديل المهمة" : "إضافة مهمة جديدة"}
             </h2>

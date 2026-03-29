@@ -21,6 +21,7 @@ interface UserStats {
   id: string;
   username: string;
   role: string;
+  phoneNumber: string | null;
   totalTasks: number;
   completedTasks: number;
   totalRevenue: number;
@@ -30,6 +31,8 @@ interface UserStats {
 export default function AdminPanelClient({ users }: { users: UserStats[] }) {
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [changingRole, setChangingRole] = useState<string | null>(null);
+  const [editingPhone, setEditingPhone] = useState<string | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState<string>("");
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
@@ -51,6 +54,30 @@ export default function AdminPanelClient({ users }: { users: UserStats[] }) {
       alert("حدث خطأ أثناء تغيير الدور");
     } finally {
       setChangingRole(null);
+    }
+  };
+
+  const handlePhoneUpdate = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/users/${userId}/phone`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phoneNumber }),
+      });
+
+      if (res.ok) {
+        alert("تم تحديث رقم الهاتف بنجاح");
+        window.location.reload();
+      } else {
+        const data = await res.json();
+        alert(data.error || "حدث خطأ");
+      }
+    } catch (error) {
+      console.error("Error updating phone:", error);
+      alert("حدث خطأ أثناء تحديث رقم الهاتف");
+    } finally {
+      setEditingPhone(null);
+      setPhoneNumber("");
     }
   };
 
@@ -138,6 +165,54 @@ export default function AdminPanelClient({ users }: { users: UserStats[] }) {
                   </div>
                 </div>
               )}
+
+              <div className="mb-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">📱 رقم الهاتف:</span>
+                  {editingPhone === user.id ? (
+                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="tel"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        placeholder="رقم الهاتف"
+                        className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm"
+                      />
+                      <button
+                        onClick={() => handlePhoneUpdate(user.id)}
+                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm transition"
+                      >
+                        حفظ
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingPhone(null);
+                          setPhoneNumber("");
+                        }}
+                        className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-lg text-sm transition"
+                      >
+                        إلغاء
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        {user.phoneNumber || "غير محدد"}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingPhone(user.id);
+                          setPhoneNumber(user.phoneNumber || "");
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs transition"
+                      >
+                        تعديل
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
               
               <div className="space-y-2">
                 <div className="flex justify-between">

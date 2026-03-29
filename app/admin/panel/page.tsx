@@ -34,6 +34,7 @@ export default async function AdminPanelPage() {
       id: user.id,
       username: user.username,
       role: user.role,
+      phoneNumber: user.phoneNumber,
       totalTasks: user.tasks.length,
       completedTasks,
       totalRevenue,

@@ -25,6 +25,13 @@ export async function PUT(
       collaboratorName,
       collaboratorCut,
       status,
+      advancePayment,
+      advancePaymentCurrency,
+      isFullyDelivered,
+      isFullyPaid,
+      collaboratorPaid,
+      collaboratorPaidAmount,
+      collaboratorPaidCurrency,
     } = body;
 
     const collaboratorCutValue = collaboratorCut || 0;
@@ -46,6 +53,13 @@ export async function PUT(
         collaboratorCut: collaboratorCutValue,
         netProfit,
         status,
+        advancePayment: advancePayment ?? 0,
+        advancePaymentCurrency: advancePaymentCurrency || "USD",
+        isFullyDelivered: isFullyDelivered ?? false,
+        isFullyPaid: isFullyPaid ?? false,
+        collaboratorPaid: collaboratorPaid ?? false,
+        collaboratorPaidAmount: collaboratorPaidAmount ?? 0,
+        collaboratorPaidCurrency: collaboratorPaidCurrency || "USD",
       },
     });
 
